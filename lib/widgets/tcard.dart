@@ -64,43 +64,49 @@ class Tcard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(children: [
-                            Text(
-                              tx.title,
-                              style: TextStyle(fontSize: 16),
-                              // TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                            ),
-                            SizedBox(
-                              width: 4,
-                            ),
-                            Container(
-                              padding: EdgeInsets.all(3),
-                              child: Text(
-                                tx.isCash ? 'Cash' : 'Bank',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                ),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(children: [
+                              Text(
+                                tx.title,
+                                style: TextStyle(fontSize: 16),
+                                // TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                               ),
-                              decoration: BoxDecoration(
-                                  color: Color.fromRGBO(220, 220, 220, 1),
-                                  borderRadius: BorderRadius.circular(10)),
-                            ),
-                            SizedBox(
-                              width: 4,
-                            ),
-                            Container(
-                              padding: EdgeInsets.all(3),
-                              child: Text(
-                                NewTransaction.tagsDecoder[tx.tag],
-                                style: TextStyle(
-                                  fontSize: 10,
-                                ),
+                              SizedBox(
+                                width: 4,
                               ),
-                              decoration: BoxDecoration(
-                                  color: Color.fromRGBO(220, 220, 220, 1),
-                                  borderRadius: BorderRadius.circular(10)),
-                            ),
-                          ]),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 3),
+                                child: Text(
+                                  tx.isCash ? 'Cash' : 'Bank',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                  ),
+                                ),
+                                decoration: BoxDecoration(
+                                    color: Color.fromRGBO(220, 220, 220, 1),
+                                    border: Border.all(color: Colors.black),
+                                    borderRadius: BorderRadius.circular(10)),
+                              ),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 3),
+                                child: Text(
+                                  NewTransaction.tagsDecoder[tx.tag],
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                  ),
+                                ),
+                                decoration: BoxDecoration(
+                                    color: Color.fromRGBO(220, 220, 220, 1),
+                                    borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ]),
+                          ),
+                          SizedBox(
+                            height: 2,
+                          ),
                           Text(
                             DateFormat.yMMMd().format(tx.date),
                             style: TextStyle(
@@ -114,7 +120,7 @@ class Tcard extends StatelessWidget {
                     Container(
                       margin: EdgeInsets.all(10),
                       child: MediaQuery.of(context).size.width > 400
-                          ? FlatButton.icon(
+                          ? TextButton.icon(
                               onPressed: () => deleteFunction(tx.id),
                               icon: Icon(
                                 Icons.delete,
@@ -127,7 +133,9 @@ class Tcard extends StatelessWidget {
                                 Icons.delete,
                                 color: Theme.of(context).primaryColor,
                               ),
-                              onPressed: () => deleteFunction(tx.id),
+                              onPressed: () {
+                                deleteFunction(tx.id);
+                              },
                             ),
                     ),
                   ],

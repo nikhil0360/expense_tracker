@@ -9,7 +9,12 @@ import './models/Transaction.dart';
 import './widgets/tcard.dart';
 import './widgets/chart.dart';
 
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+
+import 'data/transaction_data.dart';
+import 'models/Transaction.dart';
+
+Future<void> main() async {
   // locking device orientation
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([
@@ -17,11 +22,12 @@ void main() {
     DeviceOrientation.portraitDown,
   ]);
 
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Expense Tracker',
@@ -67,18 +73,19 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<Transaction> transaction = [];
+  List<Transaction> transaction = [];
 
-  void deleteTranaction(String id) {
+  void deleteTransaction(String id) async {
     setState(() {
       transaction.removeWhere((tx) => tx.id == id);
     });
+
+    await FireBaseData.delete(id);
   }
 
   void addTransaction(
-      String title, double amount, DateTime date, int cash, int tag) {
+      String title, double amount, DateTime date, int cash, int tag) async {
     final Transaction tx = Transaction(
-      id: DateTime.now().toString(),
       title: title,
       amount: amount,
       date: date,
@@ -86,6 +93,9 @@ class _MyHomePageState extends State<MyHomePage> {
       tag: tag,
     );
 
+    final id = await FireBaseData.write(tx);
+
+    tx.id = id;
     setState(() {
       transaction.add(tx);
     });
@@ -133,78 +143,99 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     final txListView = Container(
-      child: Tcard(transaction, deleteTranaction),
+      child: Tcard(transaction, deleteTransaction),
       height: (MediaQuery.of(context).size.height -
               appbar.preferredSize.height -
               MediaQuery.of(context).padding.top) *
           0.7,
     );
 
-    return Scaffold(
-      appBar: appbar,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Platform.isIOS
-          ? Container(
-              // empty container
-              )
-          : FloatingActionButton(
-              child: Icon(Icons.add),
-              onPressed: () => startAddNewTransaction(context),
-            ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            // mainAxisAlignment: MainAxisAlignment.center,
-            // crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Container(
-              //   width: double.infinity,
-              //   height: 100,
-              //   child: Card(
-              //     color: Theme.of(context).primaryColorLight,
-              //     child: Text('data'),
-              //   ),
-              // ),
-              if (isLandscape)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+    return FutureBuilder(
+        future: FireBaseData.databaseReference.once(),
+        builder: (context, datasnap) {
+          if (datasnap.connectionState == ConnectionState.waiting) {
+            return Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
+
+          if (datasnap.hasError) {
+            return Scaffold(
+              body: Center(
+                child: Text('An error has occured! try again later'),
+              ),
+            );
+          }
+
+          if (datasnap.hasData) {
+            transaction = FireBaseData.read(datasnap.data);
+          }
+
+          return Scaffold(
+            appBar: appbar,
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
+            floatingActionButton: Platform.isIOS
+                ? Container(
+                    // empty container
+                    )
+                : FloatingActionButton(
+                    child: Icon(Icons.add),
+                    onPressed: () => startAddNewTransaction(context),
+                  ),
+            body: SafeArea(
+              child: SingleChildScrollView(
+                child: Column(
+                  // mainAxisAlignment: MainAxisAlignment.center,
+                  // crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Show Chart'),
-                    Switch(
-                      value: _showChart,
-                      onChanged: (bool newValue) {
-                        setState(() {
-                          _showChart = newValue;
-                        });
-                      },
-                    ),
-                  ],
-                ),
+                    // Container(
+                    //   width: double.infinity,
+                    //   height: 100,
+                    //   child: Card(
+                    //     color: Theme.of(context).primaryColorLight,
+                    //     child: Text('data'),
+                    //   ),
+                    // ),
+                    if (isLandscape)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Show Chart'),
+                          Switch(
+                            value: _showChart,
+                            onChanged: (bool newValue) {
+                              setState(() {
+                                _showChart = newValue;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
 
-              if (!isLandscape)
-                Container(
-                  child: Chart(transaction),
-                  height: (MediaQuery.of(context).size.height -
-                          appbar.preferredSize.height -
-                          MediaQuery.of(context).padding.top) *
-                      0.3,
-                ),
-              if (!isLandscape) txListView,
-
-              if (isLandscape)
-                _showChart
-                    ? Container(
-                        child: Chart(transaction),
+                    if (!isLandscape)
+                      Container(
+                        child: Chart(getRecentTransaction),
                         height: (MediaQuery.of(context).size.height -
                                 appbar.preferredSize.height -
                                 MediaQuery.of(context).padding.top) *
-                            0.6,
-                      )
-                    : txListView,
-            ],
-          ),
-        ),
-      ),
-    );
+                            0.3,
+                      ),
+                    if (!isLandscape) txListView,
+
+                    if (isLandscape)
+                      _showChart
+                          ? Container(
+                              child: Chart(getRecentTransaction),
+                              height: (MediaQuery.of(context).size.height -
+                                      appbar.preferredSize.height -
+                                      MediaQuery.of(context).padding.top) *
+                                  0.6,
+                            )
+                          : txListView,
+                  ],
+                ),
+              ),
+            ),
+          );
+        });
   }
 }

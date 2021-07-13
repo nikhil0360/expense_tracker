@@ -1,3 +1,4 @@
+import 'package:expense_tracker/data/transaction_data.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -8,7 +9,8 @@ class NewTransaction extends StatefulWidget {
     3: 'Shopping',
     4: 'Groceries',
     5: 'Entertainment',
-    6: 'Bills'
+    6: 'Bills',
+    7: 'Others',
   };
 
   final Function addTransaction;
